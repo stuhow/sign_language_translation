@@ -10,7 +10,7 @@ def get_images(directory):
   directory_list = sorted(os.listdir(directory))
   for i in range(len(directory_list)):
     print(f"Getting images of {directory_list[i]}:")
-    for image in os.listdir(directory + "/" + directory_list[i])[:100]:
+    for image in os.listdir(directory + "/" + directory_list[i])[:10]:
       img = cv2.imread(directory + "/" + directory_list[i] + "/" + image)
       # print(img.shape)
       # img = crop_image(image)
