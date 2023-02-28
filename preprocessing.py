@@ -4,9 +4,11 @@ from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras import utils
 from sklearn.model_selection import train_test_split
 import numpy as np
+import pandas as pd
+import random
 
-def make_image_square(x_max, x_min, y_max, y_min):
-    '''function used as a helper function in crop images to return a square image'''
+def make_image_square(x_max, x_min, y_max, y_min, h, w):
+    '''used in below'''
     x_diff = x_max - x_min
     y_diff = y_max - y_min
 
@@ -19,7 +21,10 @@ def make_image_square(x_max, x_min, y_max, y_min):
 
         x_max = half_length_diff_max + x_max
         x_min = x_min - half_length_diff_min
-
+        if x_min < 0:
+            x_max += abs(x_min)
+        if x_max > w:
+            x_min -= x_max
 
     elif x_diff > y_diff:
         length_diff =  x_diff -  y_diff
@@ -30,11 +35,15 @@ def make_image_square(x_max, x_min, y_max, y_min):
         y_max = half_length_diff_max + y_max
         y_min = y_min - half_length_diff_min
 
+        if y_min < 0:
+            y_max += abs(y_min)
+        if y_max > h:
+            y_min -= y_max
+
 
     return x_max, x_min, y_max, y_min
 
 def crop_image(image):
-    '''a function to crop an image to just show their hands'''
 
     mp_hands = mp.solutions.hands
 
@@ -48,36 +57,59 @@ def crop_image(image):
     h, w, c = image.shape # get image shape
 
     hand_landmarks = results.multi_hand_landmarks
-
+    crop_image = np.array([[[0]]])
     if hand_landmarks:
-            for handLMs in hand_landmarks:
-                x_max = 0
-                y_max = 0
-                x_min = w
-                y_min = h
-                for lm in handLMs.landmark:
-                    x, y = int(lm.x * w), int(lm.y * h)
-                    if x > x_max:
-                        x_max = x
-                    if x < x_min:
-                        x_min = x
-                    if y > y_max:
-                        y_max = y
-                    if y < y_min:
-                        y_min = y
-                y_min -= 20
-                y_max += 20
-                x_min -= 20
-                x_max += 20
+        for handLMs in hand_landmarks:
+            x_max = 0
+            y_max = 0
+            x_min = w
+            y_min = h
+            for lm in handLMs.landmark:
+                x, y = int(lm.x * w), int(lm.y * h)
+                if x > x_max:
+                    x_max = x
+                if x < x_min:
+                    x_min = x
+                if y > y_max:
+                    y_max = y
+                if y < y_min:
+                    y_min = y
+            y_min -= 20
+            y_max += 20
+            x_min -= 20
+            x_max += 20
 
-                x_max, x_min, y_max, y_min = make_image_square(x_max, x_min, y_max, y_min)
+        x_max, x_min, y_max, y_min = make_image_square(x_max, x_min, y_max, y_min, h, w)
 
-                crop_img = image[y_min:y_max, x_min:x_max]
+        crop_image = image[y_min:y_max, x_min:x_max]
 
-    else:
-        pass
+        if x_max > w:
+            crop_image = np.array([[[0]]])
+        if x_min < 0:
+            crop_image = np.array([[[0]]])
+        if y_max > h:
+            crop_image = np.array([[[0]]])
+        if y_min < 0:
+            crop_image = np.array([[[0]]])
 
-    return crop_img
+    mp_model.close()
+    return crop_image
+
+def balancing(X, y):
+    m = pd.Series(y).value_counts()[-1]
+    unique_values = pd.Series(y).unique()
+    x_sampled = []
+    y_sampled = []
+    for i in unique_values:
+        start = y.index(i)
+        end = len(y) - y[::-1].index(i)
+        x1 = X[start:end]
+        y1 = y[start:end]
+        x_sub, y_sub = zip(*random.sample(list(zip(x1,y1)), m))
+        x_sampled.extend(x_sub)
+        y_sampled.extend(y_sub)
+
+    return x_sampled, y_sampled
 
 
 def preprocessing(X, y):

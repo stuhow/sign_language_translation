@@ -1,5 +1,5 @@
 raw_data/
 .env
 .ipynb_checkpoints/
-__pycache__
+__pycache__/
 pretrained_models/

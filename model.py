@@ -7,7 +7,7 @@ from tensorflow.python.keras.callbacks import EarlyStopping
 def initiate_model():
     model = Sequential()
 
-    model.add(Conv2D(128, (3, 3), padding='same', input_shape = (28, 28, 3), activation='relu'))
+    model.add(Conv2D(128, (3, 3), padding='same', input_shape = (56, 56, 3), activation='relu'))
     model.add(Conv2D(128, (3, 3), padding='same', activation='relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     #model.add(BatchNormalization())
@@ -26,7 +26,7 @@ def initiate_model():
     # model.add(Dropout(0.2))
 
     model.add(Flatten())
-    model.add(Dense(2048, activation='relu'))
+    model.add(Dense(100, activation='relu'))
     model.add(Dropout(0.2))
     model.add(Dense(29, activation='softmax'))
 
