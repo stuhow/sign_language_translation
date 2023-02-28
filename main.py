@@ -40,3 +40,11 @@ print('step 5 done')
 accuracy = evaluate_model(model, X_test, y_test)
 
 print(accuracy)
+
+# ready for us to create the below functions once
+# we can save the trained model and load it for evaluation
+# if __name__ == '__main__':
+#     preprocess()
+#     train()
+#     pred()
+#     evaluate()

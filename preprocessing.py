@@ -74,10 +74,10 @@ def crop_image(image):
                     y_max = y
                 if y < y_min:
                     y_min = y
-            y_min -= 20
-            y_max += 20
-            x_min -= 20
-            x_max += 20
+            y_min -= round(h/10)
+            y_max += round(h/10)
+            x_min -= round(h/10)
+            x_max += round(h/10)
 
         x_max, x_min, y_max, y_min = make_image_square(x_max, x_min, y_max, y_min, h, w)
 

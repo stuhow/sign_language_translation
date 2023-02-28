@@ -46,6 +46,8 @@ def train_model(model, X_train, y_train):
                 callbacks = [es],
                 verbose=0)
 
+    model.save('models/model.h5')
+
     return model, history
 
 def evaluate_model(model, X_test, y_test):
