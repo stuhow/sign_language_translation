@@ -1,8 +1,8 @@
 import numpy as np
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers  import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
+from tensorflow.python.keras.callbacks import EarlyStopping
 
 def initiate_model():
     model = Sequential()
