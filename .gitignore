@@ -3,3 +3,4 @@ raw_data/
 .ipynb_checkpoints/
 __pycache__/
 models/
+processed_images/

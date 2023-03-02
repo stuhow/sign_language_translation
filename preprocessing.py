@@ -125,3 +125,27 @@ def train_val_test_split(X, y):
 	X_train, X_val, y_train, y_val = train_test_split(X, y, test_size = 0.4)
 	X_val, X_test, y_val, y_test = train_test_split(X_val, y_val, test_size = 0.5)
 	return X_train, X_val, X_test, y_train, y_val, y_test
+
+def backgroud_removal(img):
+    """Receives the croped image and proceeds
+    to remove the background, leaving only the hand layout.
+    """
+
+    # initialize mediapipe
+    mp_selfie_segmentation = mp.solutions.selfie_segmentation
+    selfie_segmentation = mp_selfie_segmentation.SelfieSegmentation(model_selection=1)
+
+    #creating white background
+    imgWhite = np.ones((img.shape[0],img.shape[1],3),np.uint8)*255
+
+    # extract segmented mask
+    results = selfie_segmentation.process(img)
+
+    #condition to apply the mask
+    condition = np.stack(
+      (results.segmentation_mask,) * 3, axis=-1) > 0.6
+
+    #merging croped img with the white background
+    noBackground = np.where(condition, img, imgWhite)
+
+    return noBackground
