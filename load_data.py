@@ -6,19 +6,20 @@ from preprocessing import backgroud_removal
 def process_images(directory,saving_dir):
     """get images local if in same directory as collab notebook"""
     directory_list = sorted(os.listdir(directory))
+    success_counter = 0
     for i in range(len(directory_list)):
         print(f"Getting images of {directory_list[i]}:")
-        for image in os.listdir(directory + "/" + directory_list[i])[:10]:
+        for image in os.listdir(directory + "/" + directory_list[i]):
             img = cv2.imread(directory + "/" + directory_list[i] + "/" + image)
-            img = backgroud_removal(img)
             img = crop_image(img)
+            img = backgroud_removal(img)
             if img.shape[0] > 1:
                 img = cv2.resize(img, (56, 56))
                 try:
                     os.mkdir(f"{saving_dir}/{directory_list[i]}")
                 except:
                     pass
-                cv2.imwrite(f"{saving_dir}/{directory_list[i]}/Image_{i}.png",img)
+                cv2.imwrite(f"{saving_dir}/{directory_list[i]}/Image_{image}",img)
     print("Complete")
 
 def get_images(directory):
