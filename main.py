@@ -8,10 +8,10 @@ from model import initiate_model, compile_model, train_model, evaluate_model
 print('Start')
 
 directory = os.environ.get('DIRECTORY')
+saving_dir = os.environ.get("SAVE_DIR") # path where the images will be saved
 
-print(directory)
 
-images, labels = get_images(directory)
+images, labels = get_images(saving_dir)
 
 
 print('step 1 done')
