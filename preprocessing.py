@@ -145,4 +145,5 @@ def backgroud_removal(img):
       (results.segmentation_mask,) * 3, axis=-1) > 0.6
     #merging croped img with the white background
     noBackground = np.where(condition, img, imgWhite)
+    selfie_segmentation.close()
     return noBackground
