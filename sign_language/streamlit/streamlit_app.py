@@ -12,6 +12,8 @@ import os
 
 def main():
     model = get_model()
+    hands = load_mediapipe_model()
+
     cap_width = 640
     cap_height = 480
 
@@ -19,8 +21,7 @@ def main():
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, cap_width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cap_height)
 
-    hands = load_mediapipe_model()
-    
+
     prediction_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
 
     if st.button("Start"):
@@ -65,7 +66,7 @@ def main():
 
 
 def get_model():
-    local_path = os.environ['MODEL']
+    local_path = '/Users/georgiantanaselea/code/stuhow/sign_language_translation/models/model.h5'
     model = load_model(local_path)
     return model
 
@@ -84,33 +85,29 @@ def load_mediapipe_model():
 
 
 def calc_bounding_rect(image, hand_landmarks):
-    h, w, c = image.shape 
+    h, w, c = image.shape
+    x_max = 0
+    y_max = 0
+    x_min = w
+    y_min = h
+    for lm in hand_landmarks.landmark:
+        x, y = int(lm.x * w), int(lm.y * h)
+        if x > x_max:
+            x_max = x
+        if x < x_min:
+            x_min = x
+        if y > y_max:
+            y_max = y
+        if y < y_min:
+            y_min = y
 
-    if hand_landmarks:
-        for handLMs in hand_landmarks:
-            x_max = 0
-            y_max = 0
-            x_min = w
-            y_min = h
-            for lm in handLMs.landmark:
-                x, y = int(lm.x * w), int(lm.y * h)
-                if x > x_max:
-                    x_max = x
-                if x < x_min:
-                    x_min = x
-                if y > y_max:
-                    y_max = y
-                if y < y_min:
-                    y_min = y
+    y_min -= round(h/20)
+    y_max += round(h/20)
+    x_min -= round(w/20)
+    x_max += round(w/20)
 
-            y_min -= round(h/20)
-            y_max += round(h/20)
-            x_min -= round(w/20)
-            x_max += round(w/20)
-
-        x_max, x_min, y_max, y_min = make_image_square(x_max, x_min, y_max, y_min, h, w)
-        return [x_max, x_min, y_max, y_min]
-
+    x_max, x_min, y_max, y_min = make_image_square(x_max, x_min, y_max, y_min, h, w)
+    return [x_max, x_min, y_max, y_min]
 
 def make_image_square(x_max, x_min, y_max, y_min, h, w):
     '''used in calculating bounding rect'''
