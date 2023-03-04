@@ -1,6 +1,6 @@
 raw_data/
 .env
-*.ipynb
 .ipynb_checkpoints/
 __pycache__/
-pretrained_models/
+models/
+processed_images/

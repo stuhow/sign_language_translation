@@ -1,13 +1,13 @@
 import numpy as np
 
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
-from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.python.keras.models import Sequential
+from tensorflow.python.keras.layers  import Dense, Dropout, Flatten, Conv2D, MaxPooling2D
+from tensorflow.python.keras.callbacks import EarlyStopping
 
 def initiate_model():
     model = Sequential()
 
-    model.add(Conv2D(128, (3, 3), padding='same', input_shape = (28, 28, 3), activation='relu'))
+    model.add(Conv2D(128, (3, 3), padding='same', input_shape = (56, 56, 3), activation='relu'))
     model.add(Conv2D(128, (3, 3), padding='same', activation='relu'))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     #model.add(BatchNormalization())
@@ -26,7 +26,7 @@ def initiate_model():
     # model.add(Dropout(0.2))
 
     model.add(Flatten())
-    model.add(Dense(2048, activation='relu'))
+    model.add(Dense(100, activation='relu'))
     model.add(Dropout(0.2))
     model.add(Dense(29, activation='softmax'))
 
@@ -45,6 +45,8 @@ def train_model(model, X_train, y_train):
                 validation_split = 0.2,
                 callbacks = [es],
                 verbose=0)
+
+    model.save('models/model.h5')
 
     return model, history
 
