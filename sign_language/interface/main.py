@@ -1,9 +1,8 @@
-
 from sign_language.data_sources.load_data import get_images
 import os
-from sign_language.ml_logic.preprocessing import train_val_test_split, preprocessing, balancing
+from sign_language.ml_logic.preprocessing import balancing, process_images, split_training_and_test_images, preprocessing
 from sign_language.ml_logic.model import initiate_model, compile_model, train_model, evaluate_model
-
+from sign_language.ml_logic.registry import save_model_local, load_model_local
 
 # os.environ['DIRECTORY']
 
@@ -18,49 +17,62 @@ def preprocess():
     saving_dir = os.environ.get("SAVE_DIR")
     process_images(directory,saving_dir)
 
+    print('Images processed')
 
-    print('step 1 done')
+    # create train and test data sets
+    split_training_and_test_images(saving_dir)
 
+    print('Images saved as train and test sets')
 
 def train():
     '''trains an image on the training dataset'''
 
-    loading_images = os.environ.get("SAVE_DIR") # path where the images will be saved
+    if os.environ.get('LOAD_DATA') == 'local':
+        loading_images = os.environ.get("LOCAL_TRAINING_DATA") # path where the images will be saved
+        images, labels = get_images(loading_images) # loads the images
+        images, labels = balancing(images, labels) # balances the classes for training
+        images, labels = preprocessing(images, labels) # preprecoesses the images
 
-    images, labels = get_images(loading_images)
-
-    X_train, X_val, X_test, y_train, y_val, y_test = train_val_test_split(images, labels)
-
-    print('step 2 done')
-
-    X_train, y_train = balancing(X_train, y_train)
-    X_train, y_train = preprocessing(X_train, y_train)
-    X_val, y_val = preprocessing(X_val, y_val)
-    X_test, y_test = preprocessing(X_test, y_test)
+    print('Data loaded')
 
     model = initiate_model()
 
-    print('step 3 done')
+    print('model initiated')
 
     model = compile_model(model)
 
-    print('step 4 done')
+    print('model compiled')
 
-    model, history = train_model(model, X_train, y_train)
+    model, history = train_model(model, images, labels)
 
-    print('step 5 done')
+    print('model trained')
 
-def evaluate(model,):
+    if os.environ.get('SAVE_MODEL') == 'local':
+        save_model_local(model)
+
+    print('Model trained')
+
+def evaluate():
     '''evaluates the model on the test set'''
+    if os.environ.get('LOAD_DATA') == 'local':
+        loading_images = os.environ.get("LOCAL_TESTING_DATA") # path where the images will be saved
+        images, labels = get_images(loading_images) # loads the images
+        images, labels = preprocessing(images, labels) # preprecoesses the images
 
-    accuracy = evaluate_model(model, X_test, y_test)
+    print('Data loaded')
+
+    if os.environ.get('LOAD_MODEL') == 'local':
+        model = load_model_local()
+
+    print('MOdel loaded')
+
+    accuracy = evaluate_model(model, images, labels)
 
     print(accuracy)
 
 # ready for us to create the below functions once
 # we can save the trained model and load it for evaluation
-# if __name__ == '__main__':
-#     preprocess()
-#     train()
-#     pred()
-#     evaluate()
+if __name__ == '__main__':
+    preprocess()
+    train()
+    evaluate()

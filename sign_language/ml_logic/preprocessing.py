@@ -6,6 +6,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 import random
+import os
 
 def make_image_square(x_max, x_min, y_max, y_min, h, w):
     '''used in below'''
@@ -147,3 +148,69 @@ def backgroud_removal(img):
     noBackground = np.where(condition, img, imgWhite)
     selfie_segmentation.close()
     return noBackground
+
+
+
+def process_images(directory,saving_dir):
+    """get images local if in same directory as collab notebook"""
+    directory_list = sorted(os.listdir(directory))
+    for i in range(len(directory_list)):
+        print(f"Getting images of {directory_list[i]}:")
+        for image in os.listdir(directory + "/" + directory_list[i])[:10]:
+            img = cv2.imread(directory + "/" + directory_list[i] + "/" + image)
+            img = crop_image(img)
+            img = backgroud_removal(img)
+            if img.shape[0] > 1:
+                img = cv2.resize(img, (56, 56))
+                try:
+                    os.mkdir(f"{saving_dir}/{directory_list[i]}")
+                except:
+                    pass
+                cv2.imwrite(f"{saving_dir}/{directory_list[i]}/Image_{image}",img)
+    print("Complete")
+
+
+def split_training_and_test_images(directory):
+    '''function to create train and test datasets from full cleaned dataset'''
+
+    def train_or_test(X, y):
+        ''' function to save data for train and test sets'''
+        for i in range(len(y)):
+            try:
+                os.mkdir(f"processed_images/train_images/{y[i]}")
+            except:
+                pass
+            cv2.imwrite(f"processed_images/train_images/{y[i]}/Image_{i}.jpg", X[i])
+
+    images = []
+    labels = []
+
+    directory_list = sorted(os.listdir(directory))
+    for i in range(len(directory_list)):
+        print(f"Getting images of {directory_list[i]}:")
+        for image in os.listdir(directory + "/" + directory_list[i]):
+            img = cv2.imread(directory + "/" + directory_list[i] + "/" + image)
+            images.append(img)
+            labels.append(directory_list[i])
+
+    X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.4, random_state=42)
+
+
+    for i in range(len(y_train)):
+        try:
+            os.mkdir(f"processed_images/train_images/{y_train[i]}")
+        except:
+            pass
+        cv2.imwrite(f"processed_images/train_images/{y_train[i]}/Image_{i}.jpg", X_train[i])
+
+    for i in range(len(y_test)):
+        try:
+            os.mkdir(f"processed_images/test_images/{y_test[i]}")
+        except:
+            pass
+        cv2.imwrite(f"processed_images/test_images/{y_test[i]}/Image_{i}.jpg", X_test[i])
+
+    # train_or_test(X_train, y_train)
+    # train_or_test(X_test, y_test)
+
+    print("Complete")
