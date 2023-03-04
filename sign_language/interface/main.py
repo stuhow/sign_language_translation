@@ -1,8 +1,9 @@
-from data_sources.load_data import get_images, process_images
+
+from sign_language.data_sources.load_data import get_images
 import os
-from ml_logic.preprocessing import train_val_test_split, preprocessing, balancing
-from ml_logic.model import initiate_model, compile_model, train_model, evaluate_model
-from ml_logic.preprocessing import train_val_test_split, preprocessing
+from sign_language.ml_logic.preprocessing import train_val_test_split, preprocessing, balancing
+from sign_language.ml_logic.model import initiate_model, compile_model, train_model, evaluate_model
+
 
 # os.environ['DIRECTORY']
 
