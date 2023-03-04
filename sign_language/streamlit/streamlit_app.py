@@ -8,65 +8,87 @@ from tensorflow import device
 from keras.models import load_model
 from tensorflow import config
 import os
+import av
+from streamlit_webrtc import (
+    RTCConfiguration,
+    VideoProcessorBase,
+    WebRtcMode,
+    webrtc_streamer,
+)
+
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
+
+def app_sign_language_detection():
+    class signs(VideoProcessorBase):
+        def __init__(self) -> None:
+            self.model = get_model()
+            self.hands = load_mediapipe_model()
+
+        def draw_and_predict(self, image):
+            prediction_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
+            print(f'initial print after defining function')
+            print(image)
+            image = cv2.flip(image, 1)
+            debug_image = copy.deepcopy(image)
+
+            debug_image = cv2.cvtColor(debug_image, cv2.COLOR_BGR2RGB)
+            results = self.hands.process(debug_image)
+            print(results.multi_hand_landmarks)
+            cropped_image = None
+            shape = 0
+
+            if results.multi_hand_landmarks is not None:
+                for hand_landmarks in results.multi_hand_landmarks:
+                    brect = calc_bounding_rect(debug_image, hand_landmarks)
+                    debug_image = draw_bounding_rect(debug_image, brect)
+                    cropped_image = debug_image[brect[3]:brect[2], brect[1]:brect[0]]
+                    print('print in the loop for results')
+                    print(cropped_image.shape)
+            else:
+                print('No hand found')
+
+            print(image)
+            try:
+                cropped_image = cv2.resize(cropped_image, (56, 56))
+                cropped_image = backgroud_removal(cropped_image)
+                cropped_image = cropped_image.reshape(1, 56, 56, 3)
+            except:
+                print('No hand found')
+
+            predict = None
+            prediction = None
+            proba = None
+            print('print before cropped image if to check shape')
+            #print(cropped_image.shape)
 
 
-def main():
-    model = get_model()
-    hands = load_mediapipe_model()
+            if cropped_image is not None:
+                print('entered if shape statement')
+                predict = self.model.predict(cropped_image)
+                prediction = np.argmax(predict[0], axis = -1)
+                proba = max(predict[0])
+                cv2.putText(cropped_image, f"Prediction: {prediction_list[prediction]}, p_value = {proba}", (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
+            return debug_image
 
-    cap_width = 640
-    cap_height = 480
+        def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
+            image = frame.to_ndarray(format='bgr24')
+            annotated_image = self.draw_and_predict(image)
+            return av.VideoFrame.from_ndarray(annotated_image,format='bgr24')
 
-    cap = cv2.VideoCapture(0)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, cap_width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, cap_height)
-
-
-    prediction_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
-
-    if st.button("Start"):
-        with st.spinner('Loading...'):
-            while True:
-                ret, image = cap.read()
-                if not ret:
-                    break
-                image = cv2.flip(image, 1)
-                debug_image = copy.deepcopy(image)
-
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                results = hands.process(image)
-
-                cropped_image = 0
-                shape = 0
-
-                if results.multi_hand_landmarks is not None:
-                    for hand_landmarks, handedness in zip(results.multi_hand_landmarks,
-                                                        results.multi_handedness):
-                        brect = calc_bounding_rect(debug_image, hand_landmarks)
-                        debug_image = draw_bounding_rect(debug_image, brect)
-                        cropped_image = debug_image[brect[3]:brect[2], brect[1]:brect[0]]
-                try:
-                    cropped_image = cv2.resize(cropped_image, (56, 56))
-                    cropped_image = backgroud_removal(cropped_image)
-                    cropped_image = cropped_image.reshape(1, 56, 56, 3)
-                except:
-                    pass
-                predict = None
-                prediction = None
-                proba = None
-                if cropped_image.shape == (1, 56, 56, 3):
-                    predict = model.predict(cropped_image)
-                    prediction = np.argmax(predict[0], axis = -1)
-                    proba = max(predict[0])
-                    st.write(f"Prediction: {prediction_list[prediction]}, p_value = {proba}")
-                st.image(debug_image)
-
-    cap.release()
-    cv2.destroyAllWindows()
-
+    webrtc_ctx = webrtc_streamer(
+    key="sign_language",
+    mode=WebRtcMode.SENDRECV,
+    rtc_configuration=RTC_CONFIGURATION,
+    video_processor_factory=signs,
+    media_stream_constraints={"video": True, "audio": False},
+    async_processing=True,
+    )
 
 def get_model():
-    local_path = '/Users/georgiantanaselea/code/stuhow/sign_language_translation/models/model.h5'
+    local_path = '/Users/georgiantanaselea/Downloads/improved_model4.h5'
     model = load_model(local_path)
     return model
 
@@ -166,5 +188,27 @@ def backgroud_removal(img):
     return noBackground
 
 
-if __name__ == '__main__':
-    main()
+def about():
+    st.write('Welcome to our drowiness detection system')
+    st.markdown("""
+     **About our app**
+    - We are attempting to improve the communication all around.
+    - Our app detects a hand using a live webcam and predicts the letter associated with the hand.""")
+
+object_detection_page = "SignIntell"
+about_page = "About SignIntell"
+
+app_mode = st.sidebar.selectbox(
+    "Choose the app mode",
+    [
+        object_detection_page,
+        about_page
+    ],)
+
+
+st.subheader(app_mode)
+
+if app_mode == object_detection_page:
+    app_sign_language_detection()
+if app_mode == about_page:
+    about()
