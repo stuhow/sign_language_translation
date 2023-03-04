@@ -9,7 +9,7 @@ from tensorflow import config
 
 
 def main():
-    model = load_model('improved_model4.h5')
+    model = load_model('/Users/georgiantanaselea/Downloads/improved_model4.h5')
     cap_width = 640
     cap_height = 480
 
