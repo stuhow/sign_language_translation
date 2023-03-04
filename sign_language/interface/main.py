@@ -1,22 +1,28 @@
-from load_data import get_images
+from data_sources.load_data import get_images, process_images
 import os
-from preprocessing import train_val_test_split, preprocessing, balancing
-from model import initiate_model, compile_model, train_model, evaluate_model
+from ml_logic.preprocessing import train_val_test_split, preprocessing, balancing
+from ml_logic.model import initiate_model, compile_model, train_model, evaluate_model
+from ml_logic.preprocessing import train_val_test_split, preprocessing
 
 # os.environ['DIRECTORY']
 
 print('Start')
 def preprocess():
-    directory = os.environ.get('DIRECTORY')
+    '''
+    processes the images and then saves train and test data sets
+    '''
 
+    # create a folder with all the cleaned images
+    directory = os.environ.get('DIRECTORY')
+    saving_dir = os.environ.get("SAVE_DIR")
+    process_images(directory,saving_dir)
 
 
     print('step 1 done')
 
 
-
-
 def train():
+    '''trains an image on the training dataset'''
 
     loading_images = os.environ.get("SAVE_DIR") # path where the images will be saved
 
@@ -44,6 +50,7 @@ def train():
     print('step 5 done')
 
 def evaluate(model,):
+    '''evaluates the model on the test set'''
 
     accuracy = evaluate_model(model, X_test, y_test)
 
