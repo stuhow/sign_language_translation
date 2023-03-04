@@ -1,8 +1,9 @@
 from sign_language.data_sources.load_data import get_images
 import os
-from sign_language.ml_logic.preprocessing import balancing, process_images, split_training_and_test_images, preprocessing
+from sign_language.ml_logic.preprocessing import process_images, split_training_and_test_images, preprocessing
 from sign_language.ml_logic.model import initiate_model, compile_model, train_model, evaluate_model
 from sign_language.ml_logic.registry import save_model_local, load_model_local
+from sign_language.data_sources.bucket_data import upload_processed_images
 
 # os.environ['DIRECTORY']
 
@@ -22,6 +23,9 @@ def preprocess():
     # create train and test data sets
     split_training_and_test_images(saving_dir)
 
+    # save preprocessed data into bukets in the cloud
+    upload_processed_images()
+
     print('Images saved as train and test sets')
 
 def train():
@@ -30,7 +34,7 @@ def train():
     if os.environ.get('LOAD_DATA') == 'local':
         loading_images = os.environ.get("LOCAL_TRAINING_DATA") # path where the images will be saved
         images, labels = get_images(loading_images) # loads the images
-        images, labels = balancing(images, labels) # balances the classes for training
+
         images, labels = preprocessing(images, labels) # preprecoesses the images
 
     print('Data loaded')
@@ -74,5 +78,5 @@ def evaluate():
 # we can save the trained model and load it for evaluation
 if __name__ == '__main__':
     preprocess()
-    train()
-    evaluate()
+    # train()
+    # evaluate()

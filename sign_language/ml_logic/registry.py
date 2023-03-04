@@ -1,5 +1,6 @@
 from tensorflow.keras import models
 
+
 def save_model_local(model):
     model.save('models.model.h5')
 
