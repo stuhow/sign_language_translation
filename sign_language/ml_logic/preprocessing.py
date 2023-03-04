@@ -173,15 +173,6 @@ def process_images(directory,saving_dir):
 def split_training_and_test_images(directory):
     '''function to create train and test datasets from full cleaned dataset'''
 
-    def train_or_test(X, y):
-        ''' function to save data for train and test sets'''
-        for i in range(len(y)):
-            try:
-                os.mkdir(f"processed_images/train_images/{y[i]}")
-            except:
-                pass
-            cv2.imwrite(f"processed_images/train_images/{y[i]}/Image_{i}.jpg", X[i])
-
     images = []
     labels = []
 
@@ -195,6 +186,7 @@ def split_training_and_test_images(directory):
 
     X_train, X_test, y_train, y_test = train_test_split(images, labels, test_size=0.4, random_state=42)
 
+    X_train, y_train = balancing(X_train, y_train) # balances the classes for training
 
     for i in range(len(y_train)):
         try:
