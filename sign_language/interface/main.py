@@ -1,7 +1,7 @@
-from load_data import get_images
+from data_sources.load_data import get_images
 import os
-from preprocessing import train_val_test_split, preprocessing, balancing
-from model import initiate_model, compile_model, train_model, evaluate_model
+from ml_logic.preprocessing import train_val_test_split, preprocessing, balancing
+from ml_logic.model import initiate_model, compile_model, train_model, evaluate_model
 
 # os.environ['DIRECTORY']
 
