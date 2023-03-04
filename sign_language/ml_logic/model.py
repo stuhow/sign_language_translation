@@ -37,6 +37,7 @@ def compile_model(model):
     return model
 
 def train_model(model, X_train, y_train):
+
     es = EarlyStopping(patience = 3, restore_best_weights = True)
     history = model.fit(X_train,
                 y_train,
@@ -45,8 +46,6 @@ def train_model(model, X_train, y_train):
                 validation_split = 0.2,
                 callbacks = [es],
                 verbose=0)
-
-    model.save('models/model.h5')
 
     return model, history
 
