@@ -3,6 +3,9 @@ from google.cloud import storage
 import os
 
 def upload_processed_images():
+
+    ## to do delete
+
     files = glob.glob('processed_images/**/**/*.*', recursive=True)
 
     client = storage.Client()
