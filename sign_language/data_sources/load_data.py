@@ -1,7 +1,7 @@
 import cv2
-from preprocessing import crop_image
+from ml_logic.preprocessing import crop_image
 import os
-from preprocessing import backgroud_removal
+from ml_logic.preprocessing import backgroud_removal
 
 def process_images(directory,saving_dir):
     """get images local if in same directory as collab notebook"""
