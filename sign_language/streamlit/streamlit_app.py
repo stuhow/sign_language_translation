@@ -1,6 +1,5 @@
 import streamlit as st
 import copy
-
 import cv2
 import numpy as np
 import mediapipe as mp
@@ -15,6 +14,9 @@ from streamlit_webrtc import (
     WebRtcMode,
     webrtc_streamer,
 )
+
+config.run_functions_eagerly(True)
+
 
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
@@ -44,12 +46,9 @@ def app_sign_language_detection():
                     brect = calc_bounding_rect(debug_image, hand_landmarks)
                     debug_image = draw_bounding_rect(debug_image, brect)
                     cropped_image = debug_image[brect[3]:brect[2], brect[1]:brect[0]]
-                    print('print in the loop for results')
-                    print(cropped_image.shape)
             else:
                 print('No hand found')
 
-            print(image)
             try:
                 cropped_image = cv2.resize(cropped_image, (56, 56))
                 cropped_image = backgroud_removal(cropped_image)
@@ -60,18 +59,21 @@ def app_sign_language_detection():
             predict = None
             prediction = None
             proba = None
-            print('print before cropped image if to check shape')
-            #print(cropped_image.shape)
 
+            try:
 
-            if cropped_image is not None:
-                print('entered if shape statement')
-                predict = self.model.predict(cropped_image)
-                prediction = np.argmax(predict[0], axis = -1)
-                proba = max(predict[0])
-                cv2.putText(cropped_image, f"Prediction: {prediction_list[prediction]}, p_value = {proba}", (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
-            return debug_image
+                if cropped_image.shape == (1, 56, 56, 3):
+                    print('entered if shape statement')
+                    predict = self.model.predict(cropped_image)
+                    prediction = np.argmax(predict[0], axis = -1)
+                    proba = max(predict[0])
+                    cv2.putText(debug_image, f"Prediction: {prediction_list[prediction]}, Probability = {proba}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
+                return debug_image
+            except:
+                cv2.putText(debug_image, f"No hand detected", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
+                return debug_image
 
         def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
             image = frame.to_ndarray(format='bgr24')
@@ -88,7 +90,7 @@ def app_sign_language_detection():
     )
 
 def get_model():
-    local_path = '/Users/georgiantanaselea/Downloads/improved_model4.h5'
+    local_path = os.environ['MODEL']
     model = load_model(local_path)
     return model
 
@@ -154,9 +156,7 @@ def make_image_square(x_max, x_min, y_max, y_min, h, w):
 
         y_max = half_length_diff_max + y_max
         y_min = y_min - half_length_diff_min
-
     return x_max, x_min, y_max, y_min
-
 
 def draw_bounding_rect(image, brect):
     cv2.rectangle(image, (brect[1], brect[3]), (brect[0], brect[2]),
