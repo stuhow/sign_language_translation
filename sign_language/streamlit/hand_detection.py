@@ -6,10 +6,12 @@ import mediapipe as mp
 from tensorflow import device
 from keras.models import load_model
 from tensorflow import config
+import os
 
 
 def main():
-    model = load_model('/Users/georgiantanaselea/Downloads/improved_model4.h5')
+    local_path = os.environ['MODEL']
+    model = load_model(local_path)
     cap_width = 640
     cap_height = 480
 

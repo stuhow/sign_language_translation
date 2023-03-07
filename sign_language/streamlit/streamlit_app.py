@@ -76,9 +76,9 @@ def app_sign_language_detection():
                 return debug_image
 
         def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
-            image = frame.to_ndarray(format='bgr24')
+            image = frame.to_ndarray(format='rgb24')
             annotated_image = self.draw_and_predict(image)
-            return av.VideoFrame.from_ndarray(annotated_image,format='bgr24')
+            return av.VideoFrame.from_ndarray(annotated_image,format='rgb24')
 
     webrtc_ctx = webrtc_streamer(
     key="sign_language",
