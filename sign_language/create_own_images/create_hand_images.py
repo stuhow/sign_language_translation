@@ -57,7 +57,7 @@ def main():
         if counter % 30 == 0:
             now = datetime.now()
             date_string = now.strftime("%Y-%m-%d %H.%M.%S")
-            cv2.imwrite(f"{create_dir}/{letter}/{letter}{date_string}", cropped_image)
+            cv2.imwrite(f"{create_dir}/{letter}/{letter}{date_string}.jpg", cropped_image)
         key = cv2.waitKey(1)
         if key == 27:  # ESC
             break
