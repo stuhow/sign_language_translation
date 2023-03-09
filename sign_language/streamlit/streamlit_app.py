@@ -2,6 +2,7 @@ import streamlit as st
 import copy
 import cv2
 import numpy as np
+from random import randrange
 import mediapipe as mp
 from tensorflow import device
 from keras.models import load_model
@@ -31,13 +32,13 @@ def app_sign_language_detection():
         def draw_and_predict(self, image):
             prediction_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
             print(f'initial print after defining function')
-            print(image)
+            # print(image)
             image = cv2.flip(image, 1)
             debug_image = copy.deepcopy(image)
 
             debug_image = cv2.cvtColor(debug_image, cv2.COLOR_BGR2RGB)
             results = self.hands.process(debug_image)
-            print(results.multi_hand_landmarks)
+            # print(results.multi_hand_landmarks)
             cropped_image = None
             shape = 0
 
@@ -66,10 +67,12 @@ def app_sign_language_detection():
                 if cropped_image.shape == (1, 56, 56, 3):
                     print('entered if shape statement')
                     predict = self.model.predict(cropped_image)
-                    prediction = np.argmax(predict[0], axis = -1)
-                    proba = max(predict[0])
-                    cv2.putText(debug_image, f"Prediction: {prediction_list[prediction]}, Probability = {proba}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
+                    top5 = np.argsort(predict)[0][-3:]
+                    # prediction = np.argmax(predict[0], axis = -1)
+                    # proba = max(predict[0])
+                    # cv2.putText(debug_image, f"Prediction: {prediction_list[prediction]}, Probability = {proba}", (10, 30),
+                    #     cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
+                    debug_image = print_prob([predict[0][i] for i in top5], [prediction_list[i] for i in top5], debug_image)
                 return debug_image
             except:
                 cv2.putText(debug_image, f"No hand detected", (10, 30),
@@ -187,6 +190,19 @@ def backgroud_removal(img):
     noBackground = np.where(condition, img, imgWhite)
     selfie_segmentation.close()
     return noBackground
+
+def print_prob(predict, letters, debug_image):
+
+    colours = [(0, 244, 127),
+                (250, 176, 55),
+                (223, 198, 106),
+                (208, 157, 74),
+                (78, 174, 107)]
+    output_frame = debug_image.copy()
+    for num, prob in enumerate(predict):
+        cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 90+num*40), colours[num], -1)
+        cv2.putText(output_frame, letters[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+    return output_frame
 
 
 def about():
