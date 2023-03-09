@@ -52,6 +52,7 @@ def app_sign_language_detection():
             try:
                 cropped_image = cv2.resize(cropped_image, (56, 56))
                 cropped_image = backgroud_removal(cropped_image)
+                cropped_image = cropped_image/255
                 cropped_image = cropped_image.reshape(1, 56, 56, 3)
             except:
                 print('No hand found')
