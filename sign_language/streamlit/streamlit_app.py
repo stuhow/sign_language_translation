@@ -36,8 +36,8 @@ def app_sign_language_detection():
             image = cv2.flip(image, 1)
             debug_image = copy.deepcopy(image)
 
-            debug_image = cv2.cvtColor(debug_image, cv2.COLOR_BGR2RGB)
-            results = self.hands.process(debug_image)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            results = self.hands.process(image)
             # print(results.multi_hand_landmarks)
             cropped_image = None
             shape = 0
