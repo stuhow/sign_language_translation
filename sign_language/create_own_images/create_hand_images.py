@@ -6,6 +6,8 @@ import mediapipe as mp
 from tensorflow import device
 from keras.models import load_model
 from tensorflow import config
+from datetime import datetime
+import os
 
 
 def main():
@@ -27,8 +29,8 @@ def main():
         min_tracking_confidence=min_tracking_confidence,
     )
     image_shape = 96
-    create_dir = os.environ("CREATE_DIR")
-    letter = os.environ("LETTER")
+    create_dir = os.environ.get("CREATE_DIR")
+    letter = os.environ.get("LETTER")
     counter = 0
     while cap.isOpened():
         ret, image = cap.read()
@@ -51,13 +53,15 @@ def main():
         try:
             cropped_image = cv2.resize(cropped_image, (image_shape, image_shape))
             cropped_image = backgroud_removal(cropped_image)
-            cropped_image = cropped_image*255
         except:
             pass
         if counter % 30 == 0:
             now = datetime.now()
             date_string = now.strftime("%Y-%m-%d %H.%M.%S")
-            cv2.imwrite(f"{create_dir}/{letter}/{letter}{date_string}.jpg", cropped_image)
+            try:
+                cv2.imwrite(f"{create_dir}/{letter}/{letter}{date_string}.jpg", cropped_image)
+            except:
+                pass
         key = cv2.waitKey(1)
         if key == 27:  # ESC
             break
