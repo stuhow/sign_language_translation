@@ -5,6 +5,7 @@ import numpy as np
 from random import randrange
 import mediapipe as mp
 from tensorflow import device
+from google.cloud import storage
 from keras.models import load_model
 from tensorflow import config
 import os
@@ -27,7 +28,7 @@ list_of_predictions = []
 def app_sign_language_detection():
     class signs(VideoProcessorBase):
         def __init__(self) -> None:
-            self.model = get_model()
+            self.model = load_cloud_model()
             self.hands = load_mediapipe_model()
 
         def draw_and_predict(self, image):
@@ -98,10 +99,26 @@ def app_sign_language_detection():
     async_processing=True,
     )
 
-def get_model():
 
-    local_path = os.environ['MODEL']
-    model = load_model(local_path)
+@st.cache
+def load_cloud_model():
+    bucket_name = os.environ["BUCKET"]
+    model_name = os.environ["MODEL_NAME"]
+    model_dir = os.environ["MODEL_DIR"]
+
+    # Create a client object for Google Cloud Storage
+    client = storage.Client()
+
+    # Get a bucket object for the bucket
+    bucket = client.get_bucket(bucket_name)
+
+    # Get a blob object for the Keras model file
+    blob = bucket.blob(model_name)
+
+    # Download the Keras model file to a local file
+    blob.download_to_filename(model_dir + model_name)
+
+    model = load_model(model_dir + model_name)
 
     return model
 
