@@ -59,20 +59,15 @@ def app_sign_language_detection():
                 print('No hand found')
 
             predict = None
-            prediction = None
-            proba = None
 
             try:
 
                 if cropped_image.shape == (1, 56, 56, 3):
                     print('entered if shape statement')
                     predict = self.model.predict(cropped_image)
-                    top5 = np.argsort(predict)[0][-3:]
-                    # prediction = np.argmax(predict[0], axis = -1)
-                    # proba = max(predict[0])
-                    # cv2.putText(debug_image, f"Prediction: {prediction_list[prediction]}, Probability = {proba}", (10, 30),
-                    #     cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
-                    debug_image = print_prob([predict[0][i] for i in top5], [prediction_list[i] for i in top5], debug_image)
+                    top3 = np.argsort(predict)[0][-3:]
+                    top3 = list(reversed(top3))
+                    debug_image = print_prob([predict[0][i] for i in top3], [prediction_list[i] for i in top3], debug_image)
                 return debug_image
             except:
                 cv2.putText(debug_image, f"No hand detected", (10, 30),
