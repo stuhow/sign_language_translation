@@ -22,7 +22,8 @@ config.run_functions_eagerly(True)
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
-
+list_of_predictions = []
+# counter = 0
 def app_sign_language_detection():
     class signs(VideoProcessorBase):
         def __init__(self) -> None:
@@ -59,15 +60,22 @@ def app_sign_language_detection():
                 print('No hand found')
 
             predict = None
-
+            # global counter
+            # if counter % 10 != 0:
+            #     return debug_image
             try:
 
                 if cropped_image.shape == (1, 56, 56, 3):
                     print('entered if shape statement')
-                    predict = self.model.predict(cropped_image)
-                    top3 = np.argsort(predict)[0][-3:]
+                    predict = self.model.predict(cropped_image)[0]
+                    global list_of_predictions
+                    list_of_predictions.append(predict)
+                    if len(list_of_predictions) > 5:
+                        del list_of_predictions[0]
+                    predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
+                    top3 = np.argsort(predict_mean)[-3:]
                     top3 = list(reversed(top3))
-                    debug_image = print_prob([predict[0][i] for i in top3], [prediction_list[i] for i in top3], debug_image)
+                    debug_image = print_prob([predict_mean[i] for i in top3], [prediction_list[i] for i in top3], debug_image)
                 return debug_image
             except:
                 cv2.putText(debug_image, f"No hand detected", (10, 30),
@@ -75,6 +83,8 @@ def app_sign_language_detection():
                 return debug_image
 
         def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
+            # global counter
+            # counter += 1
             image = frame.to_ndarray(format='rgb24')
             annotated_image = self.draw_and_predict(image)
             return av.VideoFrame.from_ndarray(annotated_image,format='rgb24')
