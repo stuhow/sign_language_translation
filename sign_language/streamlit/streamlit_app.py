@@ -2,6 +2,7 @@ import streamlit as st
 import copy
 import cv2
 import numpy as np
+from random import randrange
 import mediapipe as mp
 from tensorflow import device
 from keras.models import load_model
@@ -21,7 +22,8 @@ config.run_functions_eagerly(True)
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
-
+list_of_predictions = []
+# counter = 0
 def app_sign_language_detection():
     class signs(VideoProcessorBase):
         def __init__(self) -> None:
@@ -31,13 +33,13 @@ def app_sign_language_detection():
         def draw_and_predict(self, image):
             prediction_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
             print(f'initial print after defining function')
-            print(image)
+            # print(image)
             image = cv2.flip(image, 1)
             debug_image = copy.deepcopy(image)
 
-            debug_image = cv2.cvtColor(debug_image, cv2.COLOR_BGR2RGB)
-            results = self.hands.process(debug_image)
-            print(results.multi_hand_landmarks)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            results = self.hands.process(image)
+            # print(results.multi_hand_landmarks)
             cropped_image = None
             shape = 0
 
@@ -58,18 +60,22 @@ def app_sign_language_detection():
                 print('No hand found')
 
             predict = None
-            prediction = None
-            proba = None
-
+            # global counter
+            # if counter % 10 != 0:
+            #     return debug_image
             try:
 
                 if cropped_image.shape == (1, 56, 56, 3):
                     print('entered if shape statement')
-                    predict = self.model.predict(cropped_image)
-                    prediction = np.argmax(predict[0], axis = -1)
-                    proba = max(predict[0])
-                    cv2.putText(debug_image, f"Prediction: {prediction_list[prediction]}, Probability = {proba}", (10, 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
+                    predict = self.model.predict(cropped_image)[0]
+                    global list_of_predictions
+                    list_of_predictions.append(predict)
+                    if len(list_of_predictions) > 5:
+                        del list_of_predictions[0]
+                    predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
+                    top3 = np.argsort(predict_mean)[-3:]
+                    top3 = list(reversed(top3))
+                    debug_image = print_prob([predict_mean[i] for i in top3], [prediction_list[i] for i in top3], debug_image)
                 return debug_image
             except:
                 cv2.putText(debug_image, f"No hand detected", (10, 30),
@@ -77,6 +83,8 @@ def app_sign_language_detection():
                 return debug_image
 
         def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
+            # global counter
+            # counter += 1
             image = frame.to_ndarray(format='rgb24')
             annotated_image = self.draw_and_predict(image)
             return av.VideoFrame.from_ndarray(annotated_image,format='bgr24')
@@ -186,6 +194,19 @@ def backgroud_removal(img):
     noBackground = np.where(condition, img, imgWhite)
     selfie_segmentation.close()
     return noBackground
+
+def print_prob(predict, letters, debug_image):
+
+    colours = [(0, 244, 127),
+                (250, 176, 55),
+                (223, 198, 106),
+                (208, 157, 74),
+                (78, 174, 107)]
+    output_frame = debug_image.copy()
+    for num, prob in enumerate(predict):
+        cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 90+num*40), colours[num], -1)
+        cv2.putText(output_frame, letters[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+    return output_frame
 
 
 def about():
