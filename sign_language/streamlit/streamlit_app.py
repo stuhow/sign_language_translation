@@ -27,7 +27,7 @@ list_of_predictions = []
 def app_sign_language_detection():
     class signs(VideoProcessorBase):
         def __init__(self) -> None:
-            self.model = get_model()
+            self.model = load_model_local()
             self.hands = load_mediapipe_model()
 
         def draw_and_predict(self, image):
@@ -87,7 +87,7 @@ def app_sign_language_detection():
             # counter += 1
             image = frame.to_ndarray(format='rgb24')
             annotated_image = self.draw_and_predict(image)
-            return av.VideoFrame.from_ndarray(annotated_image,format='rgb24')
+            return av.VideoFrame.from_ndarray(annotated_image,format='bgr24')
 
     webrtc_ctx = webrtc_streamer(
     key="sign_language",
@@ -98,7 +98,7 @@ def app_sign_language_detection():
     async_processing=True,
     )
 
-def get_model():
+def load_model_local():
     local_path = os.environ['MODEL']
     model = load_model(local_path)
     return model
@@ -115,7 +115,6 @@ def load_mediapipe_model():
         min_tracking_confidence=min_tracking_confidence,
     )
     return hands
-
 
 def calc_bounding_rect(image, hand_landmarks):
     h, w, c = image.shape
