@@ -272,17 +272,17 @@ def result(top3,option):
     except:
         pass
 
-
-def set_predict(predict):
-    return predict
-
-
+# pre-loading the model before calling the main function
 
 if app_mode == object_detection_page:
     model = load_cloud_model()
     mp_model = load_mediapipe_model()
     df = get_select_box_data()
+
+    #asking the user to select a letter to be predicted for comparison.
     option = st.selectbox('Select letter to practice', df)
+
+    #if the selectbox returns a letter different than  " ", main function is called.
     if option != df[0]:
         img = Image.open(f"{os.environ.get('EXAMPLES')}/{option}/{option}.jpg")
         st.image(img, caption='Try This!')
