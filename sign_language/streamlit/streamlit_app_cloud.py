@@ -2,6 +2,7 @@ import streamlit as st
 import copy
 import cv2
 import numpy as np
+import pandas as pd
 from random import randrange
 import mediapipe as mp
 from tensorflow import device
@@ -10,6 +11,7 @@ from keras.models import load_model
 from tensorflow import config
 import os
 import av
+from PIL import Image
 from streamlit_webrtc import (
     RTCConfiguration,
     VideoProcessorBase,
@@ -18,18 +20,21 @@ from streamlit_webrtc import (
 )
 
 config.run_functions_eagerly(True)
-
+option = " "
 
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
 list_of_predictions = []
 # counter = 0
-def app_sign_language_detection():
+def app_sign_language_detection(model, mp_model):
     class signs(VideoProcessorBase):
         def __init__(self) -> None:
-            self.model = load_cloud_model()
-            self.hands = load_mediapipe_model()
+
+            ## alterando ppara carregar os modelos antes de chamar a função
+            self.model = model
+            self.hands = mp_model
+
 
         def draw_and_predict(self, image):
             prediction_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
@@ -64,6 +69,7 @@ def app_sign_language_detection():
             # global counter
             # if counter % 10 != 0:
             #     return debug_image
+            global top3
             try:
 
                 if cropped_image.shape == (1, 56, 56, 3):
@@ -100,11 +106,11 @@ def app_sign_language_detection():
     )
 
 
-@st.cache
+@st.cache_resource
 def load_cloud_model():
-    bucket_name = os.environ["BUCKET"]
-    model_name = os.environ["MODEL_NAME"]
-    model_dir = os.environ["MODEL_DIR"]
+    bucket_name = os.environ.get("BUCKET")
+    model_name = os.environ.get("MODEL_NAME")
+    model_dir = os.environ.get("MODEL_DIR")
 
     # Create a client object for Google Cloud Storage
     client = storage.Client()
@@ -122,6 +128,8 @@ def load_cloud_model():
 
     return model
 
+
+@st.cache_resource
 def load_mediapipe_model():
     max_num_hands = 1
     min_detection_confidence = 0.5
@@ -209,7 +217,7 @@ def backgroud_removal(img):
     results = selfie_segmentation.process(img)
     #condition to apply the mask
     condition = np.stack(
-      (results.segmentation_mask,) * 3, axis=-1) > 0.6
+      (results.segmentation_mask,) * 3, axis=-1) > 0.4
     #merging croped img with the white background
     noBackground = np.where(condition, img, imgWhite)
     selfie_segmentation.close()
@@ -249,7 +257,36 @@ app_mode = st.sidebar.selectbox(
 
 st.subheader(app_mode)
 
+
+@st.cache_data
+def get_select_box_data():
+
+    return list(" ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
+
+def result(top3,option):
+    try:
+        if top3[0]== option:
+            st.success(f"Congratulations! You nailed it! you made {top3[0]}")
+        else:
+            st.write(f"Are you sure you're not doing {top3[1]} or {top3[2]}")
+    except:
+        pass
+
+
+def set_predict(predict):
+    return predict
+
+
+
 if app_mode == object_detection_page:
-    app_sign_language_detection()
+    model = load_cloud_model()
+    mp_model = load_mediapipe_model()
+    df = get_select_box_data()
+    option = st.selectbox('Select letter to practice', df)
+    if option != df[0]:
+        img = Image.open(f"{os.environ.get('EXAMPLES')}/{option}/{option}.jpg")
+        st.image(img, caption='Try This!')
+        app_sign_language_detection(model, mp_model)
+
 if app_mode == about_page:
     about()
