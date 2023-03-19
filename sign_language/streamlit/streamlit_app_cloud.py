@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import pandas as pd
 from random import randrange
+import time
 import mediapipe as mp
 from tensorflow import device
 from google.cloud import storage
@@ -20,21 +21,46 @@ from streamlit_webrtc import (
 )
 
 config.run_functions_eagerly(True)
-option = " "
+
+# ss = st.session_state.get(option='A')
+
+# if "option" not in st.session_state:
+# 	st.session_state.option = "A"
 
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
 list_of_predictions = []
 # counter = 0
-def app_sign_language_detection(model, mp_model):
+test_prob = None
+#
+def app_sign_language_detection(_model, _mp_model, _option):
+
     class signs(VideoProcessorBase):
         def __init__(self) -> None:
 
-            ## alterando ppara carregar os modelos antes de chamar a função
-            self.model = model
-            self.hands = mp_model
+            self.model = _model
+            self.hands = _mp_model
+            self.option = _option
 
+        def update_option(self,option):
+            if self.option != option:
+                self.option = option
+
+
+        def get_predict(self,cropped_img):
+            if cropped_img.shape == (1, 56, 56, 3):
+                print('entered if shape statement')
+                predict = self.model.predict(cropped_img)[0]
+                global list_of_predictions
+                list_of_predictions.append(predict)
+                if len(list_of_predictions) > 5:
+                    del list_of_predictions[0]
+                predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
+                top3 = np.argsort(predict_mean)[-3:]
+                top3 = list(reversed(top3))
+
+            return top3,predict_mean
 
         def draw_and_predict(self, image):
             prediction_list = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
@@ -42,7 +68,7 @@ def app_sign_language_detection(model, mp_model):
             # print(image)
             image = cv2.flip(image, 1)
             debug_image = copy.deepcopy(image)
-
+            option = self.option
             image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             results = self.hands.process(image)
             # print(results.multi_hand_landmarks)
@@ -69,25 +95,31 @@ def app_sign_language_detection(model, mp_model):
             # global counter
             # if counter % 10 != 0:
             #     return debug_image
-            global top3
-            try:
 
-                if cropped_image.shape == (1, 56, 56, 3):
-                    print('entered if shape statement')
-                    predict = self.model.predict(cropped_image)[0]
-                    global list_of_predictions
-                    list_of_predictions.append(predict)
-                    if len(list_of_predictions) > 5:
-                        del list_of_predictions[0]
-                    predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
-                    top3 = np.argsort(predict_mean)[-3:]
-                    top3 = list(reversed(top3))
-                    debug_image = print_prob([predict_mean[i] for i in top3], [prediction_list[i] for i in top3], debug_image)
+            try:
+                # if cropped_image.shape == (1, 56, 56, 3):
+                #     print('entered if shape statement')
+                #     predict = self.model.predict(cropped_image)[0]
+                #     global list_of_predictions
+                #     list_of_predictions.append(predict)
+                #     if len(list_of_predictions) > 5:
+                #         del list_of_predictions[0]
+                #     predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
+                #     top3 = np.argsort(predict_mean)[-3:]
+                #     top3 = list(reversed(top3))
+                top3,predict_mean = self.get_predict(cropped_image)
+                global test_prob
+                test_prob = top3[0]
+                debug_image = print_prob([predict_mean[i] for i in top3], [prediction_list[i] for i in top3], debug_image,option)
                 return debug_image
+
             except:
                 cv2.putText(debug_image, f"No hand detected", (10, 30),
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
                 return debug_image
+
+
+
 
         def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
             # global counter
@@ -104,7 +136,11 @@ def app_sign_language_detection(model, mp_model):
     media_stream_constraints={"video": True, "audio": False},
     async_processing=True,
     )
+    if webrtc_ctx.video_processor:
+        webrtc_ctx.video_processor.update_option(_option)
+        return _option
 
+    return option
 
 @st.cache_resource
 def load_cloud_model():
@@ -217,13 +253,13 @@ def backgroud_removal(img):
     results = selfie_segmentation.process(img)
     #condition to apply the mask
     condition = np.stack(
-      (results.segmentation_mask,) * 3, axis=-1) > 0.4
+      (results.segmentation_mask,) * 3, axis=-1) > 0.6
     #merging croped img with the white background
     noBackground = np.where(condition, img, imgWhite)
     selfie_segmentation.close()
     return noBackground
 
-def print_prob(predict, letters, debug_image):
+def print_prob(predict, letters, debug_image,option):
 
     colours = [(0, 244, 127),
                 (250, 176, 55),
@@ -234,7 +270,20 @@ def print_prob(predict, letters, debug_image):
     for num, prob in enumerate(predict):
         cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 90+num*40), colours[num], -1)
         cv2.putText(output_frame, letters[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
+    if option == letters[0]:
+        cv2.putText(output_frame, f"Congrats! you're doing {letters[0]} with {round(predict[0]*100)}% Accuracy ", (80, 450),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (79, 235, 52), 2, cv2.LINE_AA)
+    else:
+        cv2.putText(output_frame, f"Sorry, you're doing {letters[0]} instead of {option}", (80, 450),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (235, 52, 52), 2, cv2.LINE_AA)
     return output_frame
+
+
+
+
+st.set_page_config(
+            page_title="Sign Language Translation", # => Quick reference - Streamlit
+            # page_icon="🐍",
+            layout="centered", # wide
+            initial_sidebar_state="auto") # collapsed
 
 
 def about():
@@ -272,21 +321,52 @@ def result(top3,option):
     except:
         pass
 
+# grid to place the example image in the middle
+def grid(img):
+
+    col1,col2,col3 = st.columns(3)
+
+    with col2:
+        place_holder = st.image(img)
+    return place_holder
+
+
+def change(option):
+
+    info = st.info(f"This is the shape of  {option}")
+    img = Image.open(f"{os.environ.get('EXAMPLES')}/{option}/{option}.jpg")
+    place_holder = grid(img)
+    time.sleep(5)
+    place_holder.empty()
+    info.empty()
+    app_sign_language_detection(model, mp_model,option)
+
+
 # pre-loading the model before calling the main function
 
 if app_mode == object_detection_page:
     model = load_cloud_model()
     mp_model = load_mediapipe_model()
     df = get_select_box_data()
+    opt_holder = " "
 
     #asking the user to select a letter to be predicted for comparison.
     option = st.selectbox('Select letter to practice', df)
+    # if st.session_state.option != option:
+    #     st.session_state.option = option
+
 
     #if the selectbox returns a letter different than  " ", main function is called.
-    if option != df[0]:
-        img = Image.open(f"{os.environ.get('EXAMPLES')}/{option}/{option}.jpg")
-        st.image(img, caption='Try This!')
-        app_sign_language_detection(model, mp_model)
+    if option != opt_holder:
+        opt_holder = app_sign_language_detection(model, mp_model,option)
+        if st.button("Get a hint!"):
+            info = st.info(f"This is the shape of  {option}")
+            img = Image.open(f"{os.environ.get('EXAMPLES')}/{option}/{option}.jpg")
+            place_holder = grid(img)
+            time.sleep(5)
+            place_holder.empty()
+            info.empty()
+
 
 if app_mode == about_page:
     about()
