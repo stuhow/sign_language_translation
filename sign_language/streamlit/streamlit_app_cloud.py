@@ -111,6 +111,7 @@ def app_sign_language_detection(_model, _mp_model, _option):
                 global test_prob
                 test_prob = top3[0]
                 debug_image = print_prob([predict_mean[i] for i in top3], [prediction_list[i] for i in top3], debug_image,option)
+
                 return debug_image
 
             except:
@@ -271,27 +272,32 @@ def print_prob(predict, letters, debug_image,option):
         cv2.rectangle(output_frame, (0,60+num*40), (int(prob*100), 90+num*40), colours[num], -1)
         cv2.putText(output_frame, letters[num], (0, 85+num*40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2, cv2.LINE_AA)
     if option == letters[0]:
-        cv2.putText(output_frame, f"Congrats! you're doing {letters[0]} with {round(predict[0]*100)}% Accuracy ", (80, 450),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (79, 235, 52), 2, cv2.LINE_AA)
+        cv2.putText(output_frame, f"Congrats! you're doing {letters[0]} with {round(predict[0]*100)}% Accuracy ",
+                    (80, 450),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (79, 235, 52), 2, cv2.LINE_AA)
+
     else:
         cv2.putText(output_frame, f"Sorry, you're doing {letters[0]} instead of {option}", (80, 450),cv2.FONT_HERSHEY_SIMPLEX, 0.7, (235, 52, 52), 2, cv2.LINE_AA)
+
     return output_frame
 
 
 
 
 st.set_page_config(
-            page_title="Sign Language Translation", # => Quick reference - Streamlit
+            page_title="Sign Language",
             # page_icon="🐍",
             layout="centered", # wide
-            initial_sidebar_state="auto") # collapsed
+            initial_sidebar_state="auto")
 
 
 def about():
-    st.write('Welcome to our drowiness detection system')
+    st.write('Welcome to our Sign Language detection system')
     st.markdown("""
      **About our app**
     - We are attempting to improve the communication all around.
-    - Our app detects a hand using a live webcam and predicts the letter associated with the hand.""")
+    - Our app is a real time Sign Language detection, using a live camera the
+    user can practice hand signs by selecting the desired letter.
+    - Our system will detect the hand sign being made and evaluate accordingly.""")
 
 object_detection_page = "SignIntell"
 about_page = "About SignIntell"
@@ -312,14 +318,6 @@ def get_select_box_data():
 
     return list(" ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
 
-def result(top3,option):
-    try:
-        if top3[0]== option:
-            st.success(f"Congratulations! You nailed it! you made {top3[0]}")
-        else:
-            st.write(f"Are you sure you're not doing {top3[1]} or {top3[2]}")
-    except:
-        pass
 
 # grid to place the example image in the middle
 def grid(img):
@@ -329,17 +327,6 @@ def grid(img):
     with col2:
         place_holder = st.image(img)
     return place_holder
-
-
-def change(option):
-
-    info = st.info(f"This is the shape of  {option}")
-    img = Image.open(f"{os.environ.get('EXAMPLES')}/{option}/{option}.jpg")
-    place_holder = grid(img)
-    time.sleep(5)
-    place_holder.empty()
-    info.empty()
-    app_sign_language_detection(model, mp_model,option)
 
 
 # pre-loading the model before calling the main function
@@ -352,9 +339,6 @@ if app_mode == object_detection_page:
 
     #asking the user to select a letter to be predicted for comparison.
     option = st.selectbox('Select letter to practice', df)
-    # if st.session_state.option != option:
-    #     st.session_state.option = option
-
 
     #if the selectbox returns a letter different than  " ", main function is called.
     if option != opt_holder:
