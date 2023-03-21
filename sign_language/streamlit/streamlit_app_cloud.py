@@ -50,7 +50,6 @@ def app_sign_language_detection(_model, _mp_model, _option):
             if self.option != option:
                 self.option = option
 
-
         def get_predict(self,cropped_img):
             if cropped_img.shape == (1, 56, 56, 3):
                 print('entered if shape statement')
@@ -62,8 +61,7 @@ def app_sign_language_detection(_model, _mp_model, _option):
                 predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
                 top3 = np.argsort(predict_mean)[-3:]
                 top3 = list(reversed(top3))
-
-
+                
             return top3,predict_mean
 
         def draw_and_predict(self, image):
@@ -123,6 +121,9 @@ def app_sign_language_detection(_model, _mp_model, _option):
                         cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA)
                 return debug_image
 
+
+
+
         def recv(self, frame: av.VideoFrame) -> av.VideoFrame:
             # global counter
             # counter += 1
@@ -139,10 +140,11 @@ def app_sign_language_detection(_model, _mp_model, _option):
     async_processing=True,
     )
     if webrtc_ctx.video_processor:
+
         webrtc_ctx.video_processor.update_status(_option)
         return _option
 
-
+    return option
 
 @st.cache_resource
 def load_cloud_model():
@@ -282,11 +284,15 @@ def print_prob(predict, letters, debug_image,option):
     return output_frame
 
 
+
 st.set_page_config(
             page_title="SignIntell",
+
+
             # page_icon="🐍",
             layout="centered", # wide
             initial_sidebar_state="auto")
+
 
 # Upload models to the page, first thing when opening!
 model = load_cloud_model()
@@ -320,6 +326,17 @@ st.subheader(app_mode)
 def get_select_box_data():
 
     return list(" ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
+
+
+
+# grid to place the example image in the middle
+def grid(img):
+
+    col1,col2,col3 = st.columns(3)
+
+    with col2:
+        place_holder = st.image(img)
+    return place_holder
 
 
 # grid to place the example image in the middle
@@ -376,10 +393,12 @@ def obj_detection():
             place_holder.empty()
             info.empty()
 
+
 # pre-loading the model before calling the main function
 
 if app_mode == object_detection_page:
     obj_detection()
+
 
 if app_mode == about_page:
     about()
