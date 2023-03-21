@@ -12,6 +12,7 @@ from keras.models import load_model
 from tensorflow import config
 import os
 import av
+from rembg import remove
 from PIL import Image
 from streamlit_webrtc import (
     RTCConfiguration,
@@ -42,11 +43,12 @@ def app_sign_language_detection(_model, _mp_model, _option):
             self.model = _model
             self.hands = _mp_model
             self.option = _option
+            self.top3 = None
 
-        def update_option(self,option):
+
+        def update_status(self,option):
             if self.option != option:
                 self.option = option
-
 
         def get_predict(self,cropped_img):
             if cropped_img.shape == (1, 56, 56, 3):
@@ -59,7 +61,7 @@ def app_sign_language_detection(_model, _mp_model, _option):
                 predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
                 top3 = np.argsort(predict_mean)[-3:]
                 top3 = list(reversed(top3))
-
+                
             return top3,predict_mean
 
         def draw_and_predict(self, image):
@@ -138,7 +140,8 @@ def app_sign_language_detection(_model, _mp_model, _option):
     async_processing=True,
     )
     if webrtc_ctx.video_processor:
-        webrtc_ctx.video_processor.update_option(_option)
+
+        webrtc_ctx.video_processor.update_status(_option)
         return _option
 
     return option
@@ -282,12 +285,18 @@ def print_prob(predict, letters, debug_image,option):
 
 
 
-
 st.set_page_config(
-            page_title="Sign Language",
+            page_title="SignIntell",
+
+
             # page_icon="🐍",
             layout="centered", # wide
             initial_sidebar_state="auto")
+
+
+# Upload models to the page, first thing when opening!
+model = load_cloud_model()
+mp_model = load_mediapipe_model()
 
 
 def about():
@@ -299,7 +308,7 @@ def about():
     user can practice hand signs by selecting the desired letter.
     - Our system will detect the hand sign being made and evaluate accordingly.""")
 
-object_detection_page = "SignIntell"
+object_detection_page = "SignLingo"
 about_page = "About SignIntell"
 
 app_mode = st.sidebar.selectbox(
@@ -319,6 +328,7 @@ def get_select_box_data():
     return list(" ABCDEFGHIJKLMNOPQRSTUVWXYZ") + ["del", "space"]
 
 
+
 # grid to place the example image in the middle
 def grid(img):
 
@@ -329,16 +339,47 @@ def grid(img):
     return place_holder
 
 
-# pre-loading the model before calling the main function
+# grid to place the example image in the middle
+def grid(img):
 
-if app_mode == object_detection_page:
-    model = load_cloud_model()
-    mp_model = load_mediapipe_model()
+    col1,col2,col3 = st.columns(3)
+
+    with col2:
+        place_holder = st.image(img)
+    return place_holder
+
+
+def about_sign_lingo():
+    st.markdown('**Welcome to **SignLingo**, the Sign Language training app**')
+    st.markdown("""
+                This is a real-time experience when practicing sign language,
+                follow the steps below and try!""")
+
+    if st.button("Instructions"):
+        mkdown_holder = st.markdown("""
+                    - First select which sign within the available ones you want to try.
+                    - If you have no clue on the shape, click on the Get a hint button, that will give you an example of the sign.
+                    - The example image is only available for 5 seconds, so if you need more time just click once more.
+                    - When ready, click on the start button.
+                    - As soon as the camera opens, put your hand in a position where our system detects it, and try the sign you chose!
+                    - Pay atention to the feedback answer on the bottom of the camera screen:
+                        - If you make it correctly, you should see a green statement giving you the accuracy of your sign!
+                        - If not, a red one will appear telling you which sign our system is detecting and which one you should aim to do.
+                    - Finally, whenever you want to try a new one, just select it from the dropdown menu.
+
+                    """)
+        if st.button("Close"):
+            mkdown_holder.empty()
+
+
+def obj_detection():
+
+    about_sign_lingo()
     df = get_select_box_data()
     opt_holder = " "
 
     #asking the user to select a letter to be predicted for comparison.
-    option = st.selectbox('Select letter to practice', df)
+    option = st.selectbox('**Select a Sign to practice**', df)
 
     #if the selectbox returns a letter different than  " ", main function is called.
     if option != opt_holder:
@@ -346,10 +387,17 @@ if app_mode == object_detection_page:
         if st.button("Get a hint!"):
             info = st.info(f"This is the shape of  {option}")
             img = Image.open(f"{os.environ.get('EXAMPLES')}/{option}/{option}.jpg")
+            img = remove(img)
             place_holder = grid(img)
             time.sleep(5)
             place_holder.empty()
             info.empty()
+
+
+# pre-loading the model before calling the main function
+
+if app_mode == object_detection_page:
+    obj_detection()
 
 
 if app_mode == about_page:
