@@ -61,7 +61,7 @@ def app_sign_language_detection(_model, _mp_model, _option):
                 predict_mean = np.mean(np.array(list_of_predictions), axis = 0)
                 top3 = np.argsort(predict_mean)[-3:]
                 top3 = list(reversed(top3))
-                
+
             return top3,predict_mean
 
         def draw_and_predict(self, image):
@@ -144,7 +144,7 @@ def app_sign_language_detection(_model, _mp_model, _option):
         webrtc_ctx.video_processor.update_status(_option)
         return _option
 
-    return option
+
 
 @st.cache_resource
 def load_cloud_model():
