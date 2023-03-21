@@ -395,10 +395,26 @@ def obj_detection():
 
 
 # pre-loading the model before calling the main function
+def add_background():
+    st.markdown(
+         f"""
+         <style>
+         .stApp {{
+             background-image: url("https://www.kamiapp.com/wp-content/uploads/2021/09/5-Ways-to-Bring-Sign-Language-Into-Your-Classroom.png");
+             background-attachment: fixed;
+             background-size: cover
+         }}
+         </style>
+         """,
+         unsafe_allow_html=True
+     )
+
 
 if app_mode == object_detection_page:
+    add_background()
     obj_detection()
 
 
 if app_mode == about_page:
+    add_background()
     about()
